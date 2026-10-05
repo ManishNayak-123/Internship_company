@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en" class="dark scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ITZFIZZ | Hypercar Scroll Experience</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        cyanGlow: '#00f3ff',
+                        purpleGlow: '#a855f7',
+                        darkBg: '#05070f'
+                    },
+                    fontFamily: {
+                        sans: ['Space Grotesk', 'Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@300;400;600;800;900&display=swap" rel="stylesheet">
+    
+    <!-- GSAP & ScrollTrigger CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        body {
+            background-color: #05070f;
+            color: #f3f4f6;
+            overflow-x: hidden;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        /* Glassmorphism Styles */
+        .glass-panel {
+            background: rgba(10, 15, 30, 0.65);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(0, 243, 255, 0.15);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .glass-panel-glow {
+            box-shadow: 0 0 25px rgba(0, 243, 255, 0.12), inset 0 0 15px rgba(0, 243, 255, 0.05);
+        }
+
+        /* Text Neon Glow Effects */
+        .text-glow-cyan {
+            text-shadow: 0 0 15px rgba(0, 243, 255, 0.6), 0 0 30px rgba(0, 243, 255, 0.3);
+        }
+
+        .text-glow-purple {
+            text-shadow: 0 0 15px rgba(168, 85, 247, 0.6), 0 0 30px rgba(168, 85, 247, 0.3);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #05070f;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 4px;
+            border: 1px solid rgba(0, 243, 255, 0.2);
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #00f3ff;
+        }
+    </style>
+</head>
+<body class="selection:bg-cyanGlow selection:text-black">
+
+    <!-- Navigation Bar -->
+    <nav class="fixed top-0 left-0 w-full z-50 px-6 py-4 transition-all duration-300" id="navbar">
+        <div class="max-w-7xl mx-auto flex items-center justify-between glass-panel rounded-full px-6 py-3">
+            <div class="flex items-center space-x-3">
+                <div class="w-3 h-3 rounded-full bg-cyanGlow animate-pulse shadow-[0_0_10px_#00f3ff]"></div>
+                <span class="font-black text-xl tracking-wider text-white">ITZ<span class="text-cyanGlow">FIZZ</span></span>
+            </div>
+            
+            <div class="hidden md:flex items-center space-x-8 text-sm font-medium text-gray-300">
+                <a href="#hero" class="hover:text-cyanGlow transition-colors">Overview</a>
+                <a href="#specs" class="hover:text-cyanGlow transition-colors">Specs</a>
+                <a href="#performance" class="hover:text-cyanGlow transition-colors">Performance</a>
+                <a href="#tech" class="hover:text-cyanGlow transition-colors">Telemetry</a>
+            </div>
+
+            <div class="flex items-center space-x-4">
+                <button onclick="toggleAudio()" id="audioBtn" class="flex items-center space-x-2 text-xs font-mono bg-white/5 hover:bg-white/10 text-cyanGlow border border-cyanGlow/30 px-3 py-1.5 rounded-full transition-all">
+                    <i data-lucide="volume-2" class="w-3.5 h-3.5"></i>
+                    <span id="audioText">SOUND OFF</span>
+                </button>
+                <a href="#specs" class="hidden sm:inline-flex bg-gradient-to-r from-cyanGlow to-blue-600 text-black font-bold text-xs uppercase px-5 py-2.5 rounded-full shadow-[0_0_15px_rgba(0,243,255,0.4)] hover:shadow-[0_0_25px_rgba(0,243,255,0.7)] hover:scale-105 transition-all">
+                    Configure
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- HERO SECTION (Scroll Pinning Container) -->
+    <div id="hero-trigger" class="relative w-full h-[350vh]">
+        <!-- Sticky Viewport Wrapper -->
+        <section id="hero" class="sticky top-0 left-0 w-full h-screen overflow-hidden flex flex-col justify-between pt-24 pb-8 px-4 md:px-12 z-10">
+            
+            <!-- Dynamic Canvas Background & Car Renderer -->
+            <canvas id="carCanvas" class="absolute inset-0 w-full h-full z-0 pointer-events-none"></canvas>
+
+            <!-- Background Lighting Vignette & Gradients -->
+            <div class="absolute inset-0 bg-radial from-transparent via-darkBg/60 to-darkBg z-1 pointer-events-none"></div>
+            <div class="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-cyanGlow/10 blur-[120px] rounded-full pointer-events-none"></div>
+            <div class="absolute bottom-10 right-10 w-[400px] h-[200px] bg-purpleGlow/10 blur-[100px] rounded-full pointer-events-none"></div>
+
+            <!-- Top HUD & Main Headline -->
+            <div class="relative z-10 max-w-7xl mx-auto w-full text-center mt-4">
+                <!-- Status Badge -->
+                <div id="statusBadge" class="inline-flex items-center space-x-2 px-3 py-1 rounded-full glass-panel text-xs font-mono text-cyanGlow mb-4 opacity-0 transform translate-y-4">
+                    <span class="w-2 h-2 rounded-full bg-cyanGlow animate-ping"></span>
+                    <span class="tracking-widest uppercase">AERO DYNAMICS ACTIVE // MODE: TURBO</span>
+                </div>
+
+                <!-- Main Letter Spaced Headline -->
+                <h1 id="heroTitle" class="text-3xl sm:text-5xl md:text-7xl lg:text-8xl font-extrabold tracking-[0.25em] text-transparent bg-clip-text bg-gradient-to-r from-white via-gray-100 to-gray-400 drop-shadow-2xl uppercase select-none">
+                    <!-- Letters inserted dynamically by JS for smooth stagger animation -->
+                    W E L C O M E I T Z F I Z Z
+                </h1>
+                
+                <p id="heroSub" class="text-xs sm:text-base font-mono text-cyanGlow/80 tracking-widest mt-3 uppercase opacity-0">
+                    Precision Engineered • Scroll-Driven Motion Telemetry
+                </p>
+            </div>
+
+            <!-- Interactive Speedometer HUD Overlay (Center Right / Mobile bottom) -->
+            <div id="telemetryHud" class="absolute top-1/2 right-6 md:right-12 -translate-y-1/2 z-10 hidden sm:flex flex-col space-y-4 font-mono text-xs opacity-0 transform translate-x-8">
+                <div class="glass-panel p-4 rounded-xl border-l-2 border-l-cyanGlow w-48">
+                    <div class="text-gray-400 text-[10px] uppercase tracking-wider">Velocity Engine</div>
+                    <div class="flex items-baseline justify-between mt-1">
+                        <span id="speedDisplay" class="text-3xl font-black text-cyanGlow text-glow-cyan">0</span>
+                        <span class="text-gray-400">KM/H</span>
+                    </div>
+                    <div class="w-full bg-gray-800 h-1.5 rounded-full mt-2 overflow-hidden">
+                        <div id="speedBar" class="bg-gradient-to-r from-cyanGlow to-purpleGlow h-full w-0 transition-all duration-75"></div>
+                    </div>
+                </div>
+
+                <div class="glass-panel p-4 rounded-xl border-l-2 border-l-purpleGlow w-48">
+                    <div class="text-gray-400 text-[10px] uppercase tracking-wider">Aero Downforce</div>
+                    <div class="flex items-baseline justify-between mt-1">
+                        <span id="downforceDisplay" class="text-2xl font-bold text-purple-400">1,240</span>
+                        <span class="text-gray-400">KG</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Impact Metrics & Statistics Cards -->
+            <div class="relative z-10 max-w-7xl mx-auto w-full grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6 mb-4">
+                
+                <!-- Stat Card 1 -->
+                <div class="stat-card glass-panel glass-panel-glow p-4 sm:p-5 rounded-2xl border-t border-cyanGlow/30 hover:border-cyanGlow/70 transition-all transform opacity-0 translate-y-8">
+                    <div class="flex items-center justify-between text-cyanGlow mb-1">
+                        <i data-lucide="zap" class="w-4 h-4"></i>
+                        <span class="font-mono text-[10px] text-gray-400">ACCELERATION</span>
+                    </div>
+                    <div class="text-2xl sm:text-4xl font-black tracking-tight text-white font-mono">
+                        <span class="counter" data-target="98">0</span>%
+                    </div>
+                    <p class="text-[11px] text-gray-400 mt-1 line-clamp-1">Peak torque dynamic responsiveness</p>
+                </div>
+
+                <!-- Stat Card 2 -->
+                <div class="stat-card glass-panel glass-panel-glow p-4 sm:p-5 rounded-2xl border-t border-cyanGlow/30 hover:border-cyanGlow/70 transition-all transform opacity-0 translate-y-8">
+                    <div class="flex items-center justify-between text-cyanGlow mb-1">
+                        <i data-lucide="timer" class="w-4 h-4"></i>
+                        <span class="font-mono text-[10px] text-gray-400">LATENCY</span>
+                    </div>
+                    <div class="text-2xl sm:text-4xl font-black tracking-tight text-white font-mono">
+                        <span class="counter-float" data-target="0.2">0.0</span>s
+                    </div>
+                    <p class="text-[11px] text-gray-400 mt-1 line-clamp-1">Hyper-response active suspension</p>
+                </div>
+
+                <!-- Stat Card 3 -->
+                <div class="stat-card glass-panel glass-panel-glow p-4 sm:p-5 rounded-2xl border-t border-cyanGlow/30 hover:border-cyanGlow/70 transition-all transform opacity-0 translate-y-8">
+                    <div class="flex items-center justify-between text-cyanGlow mb-1">
+                        <i data-lucide="target" class="w-4 h-4"></i>
+                        <span class="font-mono text-[10px] text-gray-400">PRECISION</span>
+                    </div>
+                    <div class="text-2xl sm:text-4xl font-black tracking-tight text-white font-mono">
+                        <span class="counter" data-target="100">0</span>%
+                    </div>
+                    <p class="text-[11px] text-gray-400 mt-1 line-clamp-1">Vector torque handling control</p>
+                </div>
+
+                <!-- Stat Card 4 -->
+                <div class="stat-card glass-panel glass-panel-glow p-4 sm:p-5 rounded-2xl border-t border-cyanGlow/30 hover:border-cyanGlow/70 transition-all transform opacity-0 translate-y-8">
+                    <div class="flex items-center justify-between text-cyanGlow mb-1">
+                        <i data-lucide="activity" class="w-4 h-4"></i>
+                        <span class="font-mono text-[10px] text-gray-400">EFFICIENCY</span>
+                    </div>
+                    <div class="text-2xl sm:text-4xl font-black tracking-tight text-white font-mono">
+                        <span class="counter-float" data-target="99.9">0.0</span>%
+                    </div>
+                    <p class="text-[11px] text-gray-400 mt-1 line-clamp-1">Continuous drivetrain efficiency</p>
+                </div>
+
+            </div>
+
+            <!-- Scroll Indicator -->
+            <div id="scrollHint" class="relative z-10 flex flex-col items-center justify-center opacity-0 transition-opacity">
+                <span class="text-[10px] font-mono tracking-widest text-gray-400 uppercase mb-1">SCROLL TO DRIVE</span>
+                <div class="w-5 h-8 border-2 border-cyanGlow/40 rounded-full flex justify-center p-1">
+                    <div class="w-1 h-2 bg-cyanGlow rounded-full animate-bounce"></div>
+                </div>
+            </div>
+
+        </section>
+    </div>
+
+    <!-- CONTENT SECTION 1: Performance Specifications -->
+    <section id="specs" class="relative z-20 min-h-screen bg-darkBg py-28 px-6 md:px-16 border-t border-cyanGlow/20">
+        <div class="max-w-7xl mx-auto">
+            
+            <div class="flex flex-col md:flex-row md:items-end justify-between mb-16">
+                <div>
+                    <span class="text-xs font-mono text-cyanGlow tracking-widest uppercase">// ARCHITECTURE & POWERTRAIN</span>
+                    <h2 class="text-4xl sm:text-6xl font-black uppercase tracking-tight text-white mt-2">
+                        ENGINEERED FOR <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyanGlow to-blue-500">HYPER SPEED</span>
+                    </h2>
+                </div>
+                <p class="text-gray-400 max-w-md text-sm mt-4 md:mt-0 font-light">
+                    Every curve and line is designed to manipulate airflow, optimize heat dissipation, and maximize downforce seamlessly under extreme acceleration.
+                </p>
+            </div>
+
+            <!-- Spec Grid Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="glass-panel p-8 rounded-3xl border border-white/10 hover:border-cyanGlow/50 transition-all duration-300 group">
+                    <div class="w-12 h-12 rounded-2xl bg-cyanGlow/10 flex items-center justify-center text-cyanGlow mb-6 group-hover:scale-110 transition-transform">
+                        <i data-lucide="cpu" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-2">Quad-Motor AWD</h3>
+                    <p class="text-gray-400 text-sm leading-relaxed">
+                        Independent torque vectoring delivers instantaneous power to each wheel for unprecedented cornering precision.
+                    </p>
+                    <div class="mt-6 pt-6 border-t border-white/10 flex justify-between font-mono text-xs text-cyanGlow">
+                        <span>MAX POWER</span>
+                        <span class="font-bold">1,900 HP</span>
+                    </div>
+                </div>
+
+                <div class="glass-panel p-8 rounded-3xl border border-white/10 hover:border-cyanGlow/50 transition-all duration-300 group">
+                    <div class="w-12 h-12 rounded-2xl bg-purpleGlow/10 flex items-center justify-center text-purple-400 mb-6 group-hover:scale-110 transition-transform">
+                        <i data-lucide="shield-check" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-2">Carbon Monocoque</h3>
+                    <p class="text-gray-400 text-sm leading-relaxed">
+                        Formula-1 grade ultra-lightweight carbon composite chassis providing structural rigidity and maximum safety.
+                    </p>
+                    <div class="mt-6 pt-6 border-t border-white/10 flex justify-between font-mono text-xs text-purple-400">
+                        <span>KERB WEIGHT</span>
+                        <span class="font-bold">1,450 KG</span>
+                    </div>
+                </div>
+
+                <div class="glass-panel p-8 rounded-3xl border border-white/10 hover:border-cyanGlow/50 transition-all duration-300 group">
+                    <div class="w-12 h-12 rounded-2xl bg-cyanGlow/10 flex items-center justify-center text-cyanGlow mb-6 group-hover:scale-110 transition-transform">
+                        <i data-lucide="wind" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-2">Active Aerodynamics</h3>
+                    <p class="text-gray-400 text-sm leading-relaxed">
+                        Computer-controlled active rear wing and front diffuser flaps automatically adjust to balance drag and downforce.
+                    </p>
+                    <div class="mt-6 pt-6 border-t border-white/10 flex justify-between font-mono text-xs text-cyanGlow">
+                        <span>TOP SPEED</span>
+                        <span class="font-bold">420 KM/H</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- CONTENT SECTION 2: Dynamic Telemetry & Features -->
+    <section id="performance" class="relative z-20 bg-black py-28 px-6 md:px-16 border-t border-white/10">
+        <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            
+            <div>
+                <span class="text-xs font-mono text-cyanGlow tracking-widest uppercase">// NEURAL COCKPIT SYSTEM</span>
+                <h2 class="text-4xl sm:text-5xl font-black uppercase text-white tracking-tight mt-2 mb-6">
+                    Real-Time Flight <br><span class="text-cyanGlow">Telemetry Engine</span>
+                </h2>
+                <p class="text-gray-400 text-base leading-relaxed mb-8">
+                    The ITZFIZZ neural operating system processes over 10,000 data points per second. From tire pressure telemetry to predictive traction control, experience driving intelligence redefined.
+                </p>
+
+                <div class="space-y-4 font-mono">
+                    <div class="glass-panel p-4 rounded-xl flex items-center justify-between border-l-4 border-l-cyanGlow">
+                        <span class="text-xs text-gray-300">SYSTEM LATENCY</span>
+                        <span class="text-sm font-bold text-cyanGlow">0.002 SECONDS</span>
+                    </div>
+                    <div class="glass-panel p-4 rounded-xl flex items-center justify-between border-l-4 border-l-purpleGlow">
+                        <span class="text-xs text-gray-300">PREDICTIVE STABILITY</span>
+                        <span class="text-sm font-bold text-purple-400">ACTIVE (AI V2.4)</span>
+                    </div>
+                    <div class="glass-panel p-4 rounded-xl flex items-center justify-between border-l-4 border-l-cyanGlow">
+                        <span class="text-xs text-gray-300">BATTERY THERMAL RECOVERY</span>
+                        <span class="text-sm font-bold text-cyanGlow">OPTIMAL (32°C)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Visual Feature Graphic Box -->
+            <div class="relative glass-panel rounded-3xl p-8 border border-cyanGlow/20 overflow-hidden flex flex-col justify-between min-h-[400px]">
+                <div class="absolute top-0 right-0 w-64 h-64 bg-cyanGlow/10 blur-[80px] rounded-full pointer-events-none"></div>
+                
+                <div class="flex justify-between items-center font-mono text-xs text-gray-400">
+                    <span>STATUS: ONLINE</span>
+                    <span class="text-cyanGlow">GRID SYNC 100%</span>
+                </div>
+
+                <div class="my-auto text-center">
+                    <div class="inline-block p-6 rounded-full bg-cyanGlow/10 border border-cyanGlow/30 mb-4 animate-pulse">
+                        <i data-lucide="gauge" class="w-16 h-16 text-cyanGlow"></i>
+                    </div>
+                    <div class="text-3xl font-black text-white uppercase tracking-wider font-mono">LAUNCH CONTROL</div>
+                    <div class="text-xs text-gray-400 mt-2 font-mono">0 - 100 KM/H IN 1.87 SECONDS</div>
+                </div>
+
+                <div class="flex justify-between items-center text-xs font-mono text-gray-500 pt-4 border-t border-white/10">
+                    <span>MODE: TRACK +</span>
+                    <span>ESP: SPORT OFF</span>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="relative z-20 bg-darkBg border-t border-white/10 py-12 px-6 text-center text-gray-500 text-xs font-mono">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0">
+            <div class="flex items-center space-x-2">
+                <span class="font-bold text-white tracking-widest">ITZ<span class="text-cyanGlow">FIZZ</span></span>
+                <span>© 2026 HYPERCAR EXPERIENCE</span>
+            </div>
+            <div class="flex space-x-6 text-gray-400">
+                <a href="#" class="hover:text-cyanGlow transition-colors">PRIVACY</a>
+                <a href="#" class="hover:text-cyanGlow transition-colors">TELEMETRY DATA</a>
+                <a href="#" class="hover:text-cyanGlow transition-colors">LEGAL</a>
+            </div>
+        </div>
+    </footer>
+
+
+    <script>
+        lucide.createIcons();
+        gsap.registerPlugin(ScrollTrigger);
+
+        // Global State & Elements
+        const canvas = document.getElementById('carCanvas');
+        const ctx = canvas.getContext('2d');
+        let audioActive = false;
+        let audioCtx = null;
+
+        // Dynamic Canvas Resize Handling
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        const titleContainer = document.getElementById('heroTitle');
+        const originalText = "W E L C O M E I T Z F I Z Z";
+        titleContainer.innerHTML = ''; // Clear container
+
+        // Split headline into wrapped letter spans for smooth staggered entrance
+        const words = originalText.split(' ');
+        words.forEach((word, wIdx) => {
+            const wordSpan = document.createElement('span');
+            wordSpan.className = 'inline-block whitespace-nowrap mx-1 sm:mx-2';
+            
+            word.split('').forEach((char) => {
+                const letterSpan = document.createElement('span');
+                letterSpan.className = 'char inline-block opacity-0 transform translate-y-12 filter blur-sm';
+                letterSpan.textContent = char;
+                wordSpan.appendChild(letterSpan);
+            });
+            
+            titleContainer.appendChild(wordSpan);
+        });
+
+        // Hypercar Geometry & Animation Parameters
+        const carState = {
+            progress: 0,      // Scroll percentage (0 to 1)
+            x: 0,             // Canvas X center
+            y: 0,             // Canvas Y center
+            scale: 0.8,       // Car scale
+            rotation: 0,      // Angle in radians
+            speed: 0,         // Simulated velocity for HUD & wheel spin
+            lightIntensity: 1 // Headlight brightness
+        };
+
+        // Render Loop for Hypercar and Speed Perspective Environment
+        function drawScene() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const width = canvas.width;
+            const height = canvas.height;
+            const centerX = width / 2;
+            const centerY = height / 2;
+
+            // Compute interpolated positions based on scroll state
+            // Car starts centered, drives forward towards viewer, scales up and angles as page scrolls
+            const currentScale = carState.scale + (carState.progress * 1.8);
+            const carY = centerY + (carState.progress * height * 0.35);
+            const carX = centerX + Math.sin(carState.progress * Math.PI * 1.5) * (width * 0.15);
+            const carAngle = (Math.sin(carState.progress * Math.PI) * 0.25) + (carState.progress * 0.1);
+
+            // 1. DRAW PROCEDURAL PERSPECTIVE TRACK / SPEED LINES
+            ctx.save();
+            ctx.translate(centerX, centerY);
+            
+            // Draw Dynamic Horizon Speed Grid
+            const gridLines = 20;
+            ctx.strokeStyle = `rgba(0, 243, 255, ${0.1 + carState.progress * 0.2})`;
+            ctx.lineWidth = 1;
+
+            for (let i = -gridLines; i <= gridLines; i++) {
+                ctx.beginPath();
+                ctx.moveTo(i * 30, 0);
+                ctx.lineTo(i * 120, height);
+                ctx.stroke();
+            }
+
+            // Motion Lines driven by scroll progress & simulated speed
+            const time = Date.now() * 0.003;
+            ctx.strokeStyle = 'rgba(0, 243, 255, 0.3)';
+            ctx.lineWidth = 1.5;
+            for (let i = 0; i < 15; i++) {
+                const offset = ((time * (1 + carState.speed * 0.05) + i * 40) % height);
+                ctx.beginPath();
+                ctx.moveTo(-width / 2 + (i * (width / 15)), -height / 2 + offset);
+                ctx.lineTo(-width / 2 + (i * (width / 15)), -height / 2 + offset + 30 + carState.speed * 0.2);
+                ctx.stroke();
+            }
+            ctx.restore();
+
+            // 2. DRAW PROCEDURAL HYPERCAR (Futuristic Sleek Top/Perspective Silhouette)
+            ctx.save();
+            ctx.translate(carX, carY);
+            ctx.rotate(carAngle);
+            ctx.scale(currentScale, currentScale);
+
+            const carWidth = 140;
+            const carLength = 280;
+
+            // Ground Ambient Shadow
+            ctx.beginPath();
+            ctx.ellipse(0, 20, carWidth * 0.8, carLength * 0.55, 0, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
+            ctx.fill();
+
+            // Underglow Light Effect
+            ctx.beginPath();
+            ctx.ellipse(0, 10, carWidth * 0.7, carLength * 0.45, 0, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(0, 243, 255, ${0.25 + Math.sin(Date.now() * 0.005) * 0.1})`;
+            ctx.fill();
+
+            // Main Car Body Shell Gradient (Sleek Matte Dark Metallic Body)
+            const bodyGradient = ctx.createLinearGradient(-carWidth/2, 0, carWidth/2, 0);
+            bodyGradient.addColorStop(0, '#0a0e17');
+            bodyGradient.addColorStop(0.3, '#1a233a');
+            bodyGradient.addColorStop(0.5, '#2e3d5c');
+            bodyGradient.addColorStop(0.7, '#1a233a');
+            bodyGradient.addColorStop(1, '#0a0e17');
+
+            // Car Body Contour (Aerodynamic Silhouette)
+            ctx.beginPath();
+            ctx.moveTo(0, -carLength / 2); // Nose tip
+            ctx.bezierCurveTo(carWidth * 0.4, -carLength * 0.4, carWidth * 0.5, -carLength * 0.1, carWidth * 0.48, carLength * 0.1);
+            ctx.bezierCurveTo(carWidth * 0.52, carLength * 0.35, carWidth * 0.4, carLength * 0.48, 0, carLength * 0.5); // Rear
+            ctx.bezierCurveTo(-carWidth * 0.4, carLength * 0.48, -carWidth * 0.52, carLength * 0.35, -carWidth * 0.48, carLength * 0.1);
+            ctx.bezierCurveTo(-carWidth * 0.5, -carLength * 0.1, -carWidth * 0.4, -carLength * 0.4, 0, -carLength / 2);
+            ctx.closePath();
+            ctx.fillStyle = bodyGradient;
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(0, 243, 255, 0.4)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Carbon Glass Cockpit Roof
+            const cockpitGrad = ctx.createLinearGradient(0, -carLength * 0.2, 0, carLength * 0.2);
+            cockpitGrad.addColorStop(0, '#020408');
+            cockpitGrad.addColorStop(0.5, '#0f172a');
+            cockpitGrad.addColorStop(1, '#020408');
+
+            ctx.beginPath();
+            ctx.moveTo(0, -carLength * 0.22);
+            ctx.bezierCurveTo(carWidth * 0.28, -carLength * 0.15, carWidth * 0.28, carLength * 0.15, 0, carLength * 0.22);
+            ctx.bezierCurveTo(-carWidth * 0.28, carLength * 0.15, -carWidth * 0.28, -carLength * 0.15, 0, -carLength * 0.22);
+            ctx.fillStyle = cockpitGrad;
+            ctx.fill();
+            ctx.strokeStyle = '#00f3ff';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            // Front LED Beam Headlights (Neon Cyan Beams)
+            const headlightGlow = ctx.createRadialGradient(-carWidth * 0.32, -carLength * 0.42, 2, -carWidth * 0.32, -carLength * 0.42, 60);
+            headlightGlow.addColorStop(0, 'rgba(0, 243, 255, 1)');
+            headlightGlow.addColorStop(0.5, 'rgba(0, 243, 255, 0.3)');
+            headlightGlow.addColorStop(1, 'rgba(0, 243, 255, 0)');
+
+            // Left Headlight Projection Cone
+            ctx.beginPath();
+            ctx.moveTo(-carWidth * 0.32, -carLength * 0.42);
+            ctx.lineTo(-carWidth * 0.8, -carLength * 1.2);
+            ctx.lineTo(-carWidth * 0.1, -carLength * 1.2);
+            ctx.fillStyle = headlightGlow;
+            ctx.fill();
+
+            // Right Headlight Projection Cone
+            ctx.beginPath();
+            ctx.moveTo(carWidth * 0.32, -carLength * 0.42);
+            ctx.lineTo(carWidth * 0.1, -carLength * 1.2);
+            ctx.lineTo(carWidth * 0.8, -carLength * 1.2);
+            ctx.fillStyle = headlightGlow;
+            ctx.fill();
+
+            // Headlight Bulbs
+            ctx.fillStyle = '#ffffff';
+            ctx.shadowColor = '#00f3ff';
+            ctx.shadowBlur = 15;
+            ctx.fillRect(-carWidth * 0.38, -carLength * 0.44, 18, 4);
+            ctx.fillRect(carWidth * 0.38 - 18, -carLength * 0.44, 18, 4);
+            ctx.shadowBlur = 0; // Reset blur
+
+            // Rear Red LED Light Bar (Aggressive Rear Diffuser Light)
+            ctx.fillStyle = '#ff0055';
+            ctx.shadowColor = '#ff0055';
+            ctx.shadowBlur = 20;
+            ctx.fillRect(-carWidth * 0.35, carLength * 0.47, carWidth * 0.7, 5);
+            ctx.shadowBlur = 0;
+
+            // Spinning Alloy Rims / Wheels
+            const wheelWidth = 14;
+            const wheelLength = 40;
+            const wheelPositions = [
+                { x: -carWidth * 0.48, y: -carLength * 0.28 }, // Front Left
+                { x: carWidth * 0.48 - wheelWidth, y: -carLength * 0.28 }, // Front Right
+                { x: -carWidth * 0.50, y: carLength * 0.25 }, // Rear Left
+                { x: carWidth * 0.50 - wheelWidth, y: carLength * 0.25 }  // Rear Right
+            ];
+
+            wheelPositions.forEach((pos) => {
+                ctx.fillStyle = '#111827';
+                ctx.fillRect(pos.x, pos.y, wheelWidth, wheelLength);
+                
+                // Brake Caliper Glow Line
+                ctx.fillStyle = '#00f3ff';
+                ctx.fillRect(pos.x + (pos.x < 0 ? wheelWidth - 3 : 0), pos.y + 10, 3, wheelLength - 20);
+            });
+
+            ctx.restore();
+        }
+
+        // Render Loop Hook
+        function animationLoop() {
+            drawScene();
+            requestAnimationFrame(animationLoop);
+        }
+        animationLoop();
+
+        window.addEventListener('load', () => {
+            
+            // 1. INITIAL LOAD ANIMATIONS
+            const introTl = gsap.timeline({ defaults: { ease: 'power4.out' } });
+
+            // Animate Headline Letters Stagger
+            introTl.to('.char', {
+                opacity: 1,
+                y: 0,
+                filter: 'blur(0px)',
+                duration: 1.2,
+                stagger: 0.03
+            })
+            .to('#heroSub', {
+                opacity: 1,
+                duration: 0.8
+            }, '-=0.6')
+            .to('#statusBadge', {
+                opacity: 1,
+                y: 0,
+                duration: 0.8
+            }, '-=0.6')
+            .to('#telemetryHud', {
+                opacity: 1,
+                x: 0,
+                duration: 0.8
+            }, '-=0.6')
+            .to('.stat-card', {
+                opacity: 1,
+                y: 0,
+                duration: 0.8,
+                stagger: 0.15,
+                onComplete: startCounters
+            }, '-=0.4')
+            .to('#scrollHint', {
+                opacity: 1,
+                duration: 0.6
+            }, '-=0.2');
+
+            // 2. COUNTER COUNT-UP ANIMATION FUNCTION
+            function startCounters() {
+                // Integer Counters
+                document.querySelectorAll('.counter').forEach(counter => {
+                    const target = +counter.getAttribute('data-target');
+                    gsap.to(counter, {
+                        innerText: target,
+                        duration: 2,
+                        snap: { innerText: 1 },
+                        ease: 'power2.out'
+                    });
+                });
+
+                // Float Counters
+                document.querySelectorAll('.counter-float').forEach(counter => {
+                    const target = parseFloat(counter.getAttribute('data-target'));
+                    const obj = { val: 0 };
+                    gsap.to(obj, {
+                        val: target,
+                        duration: 2,
+                        ease: 'power2.out',
+                        onUpdate: () => {
+                            counter.innerText = obj.val.toFixed(1);
+                        }
+                    });
+                });
+            }
+
+            // 3. CORE SCROLL-DRIVEN GSAP SCROLLTRIGGER MECHANICS
+            gsap.to(carState, {
+                progress: 1,
+                ease: 'none',
+                scrollTrigger: {
+                    trigger: '#hero-trigger',
+                    start: 'top top',
+                    end: 'bottom bottom',
+                    scrub: 0.5, // Smooth inertia interpolation
+                    onUpdate: (self) => {
+                        // Calculate velocity speed for HUD gauge
+                        const currentVel = Math.round(self.getVelocity() * 0.12);
+                        const displaySpeed = Math.min(Math.abs(currentVel) + (self.progress > 0.05 ? 180 : 0), 380);
+                        
+                        document.getElementById('speedDisplay').innerText = displaySpeed;
+                        document.getElementById('speedBar').style.width = `${Math.min((displaySpeed / 380) * 100, 100)}%`;
+                        document.getElementById('downforceDisplay').innerText = (1240 + Math.round(displaySpeed * 2.8)).toLocaleString();
+                        
+                        carState.speed = displaySpeed;
+                    }
+                }
+            });
+
+            // Fade and translate top texts as user drives down
+            gsap.to('#heroTitle, #heroSub, #statusBadge', {
+                y: -120,
+                opacity: 0,
+                scrollTrigger: {
+                    trigger: '#hero-trigger',
+                    start: 'top top',
+                    end: '20% top',
+                    scrub: true
+                }
+            });
+
+            // Fade out stat cards when car accelerates forward
+            gsap.to('.stat-card, #telemetryHud, #scrollHint', {
+                y: 80,
+                opacity: 0,
+                stagger: 0.05,
+                scrollTrigger: {
+                    trigger: '#hero-trigger',
+                    start: '15% top',
+                    end: '35% top',
+                    scrub: true
+                }
+            });
+
+        });
+
+        function toggleAudio() {
+            const btnText = document.getElementById('audioText');
+            if (!audioActive) {
+                audioActive = true;
+                btnText.innerText = 'SOUND ON';
+                
+                // Initialize Web Audio API Synth Engine Hum
+                try {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(55, audioCtx.currentTime); // Low engine bass note
+                    
+                    // Filter for smooth deep rumble
+                    const filter = audioCtx.createBiquadFilter();
+                    filter.type = 'lowpass';
+                    filter.frequency.setValueAtTime(220, audioCtx.currentTime);
+
+                    gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+                    
+                    osc.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start();
+                } catch(e) {
+                    console.log('Audio init skipped');
+                }
+            } else {
+                audioActive = false;
+                btnText.innerText = 'SOUND OFF';
+                if (audioCtx) {
+                    audioCtx.close();
+                }
+            }
+        }
+    </script>
+</body>
+</html>
